@@ -9,22 +9,41 @@ import {
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Anton } from "next/font/google";
 
-const NAV_MENU = ["Jogadores", "Jogos", "Contato"];
+const NAV_MENU = ["Jogadores", "Quiz", "Jogos"];
 
-function NavItem({ children }: { children: React.ReactNode }) {
+// function NavItem({ children }: { children: React.ReactNode }) {
+//   return (
+//     <li>
+//       <Typography
+//         as="a"
+//         href="#"
+//         variant="paragraph"
+//         className="flex items-center gap-2 font-medium"
+//       >
+//         {children}
+//       </Typography>
+//     </li>
+//   );
+// }
+
+const NavItem = ({ children }) => {
   return (
     <li>
-      <Typography
-        as="a"
-        href="#"
-        variant="paragraph"
-        className="flex items-center gap-2 font-medium"
+      <a
+        href={`#${children}`}
+        className="hover:text-primary transition-colors duration-300"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById(children)?.scrollIntoView({
+            behavior: "smooth",
+          });
+        }}
       >
         {children}
-      </Typography>
+      </a>
     </li>
   );
-}
+};
 
 export function Navbar() {
   const [open, setOpen] = React.useState(false);

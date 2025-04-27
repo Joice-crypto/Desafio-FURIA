@@ -12,14 +12,14 @@ import skullz from "../../public/image/jogadores/skullz-furia-reserva.avif";
 
 import { Button, Typography, Card, CardBody } from "@material-tailwind/react";
 
-export function BlogPost() {
+export function LineUP() {
   return (
     <section
       id="Jogadores"
       className="w-full max-w-6xl mx-auto flex flex-col items-center px-4 py-20"
     >
       <Button color="gray" className="mb-3" size="sm">
-        Notícias
+        Line-up
       </Button>
       <Typography variant="h3" className="text-center" color="blue-gray">
         Nossa line-up do CS:GO 2
@@ -190,4 +190,4 @@ export function BlogPost() {
   );
 }
 
-export default BlogPost;
+export default LineUP;
