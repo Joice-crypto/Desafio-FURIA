@@ -9,6 +9,9 @@ const apiKey = process.env.MISTRAL_API_KEY;
 const client = new Mistral({ apiKey: apiKey });
 
 export async function ChatBotRoutes(app: FastifyInstance) {
+    app.addHook('preHandler', async (request) => {
+        await request.jwtVerify()
+    })
     app.post('/chat', async (request, reply) => {
         const body = request.body as { message: string };
 

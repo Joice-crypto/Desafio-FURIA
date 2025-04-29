@@ -33,10 +33,17 @@ export function Quiz() {
       Nome: ${formData.nome}
       Endereço: ${formData.endereco}
       CPF: ${formData.cpf}
-      Interesses: ${formData.interesses}
-      Atividades: ${formData.atividades}
+      Jogos que acompanha: ${formData.jogos}
+      Se ja foi em um evento de e-sports presencial: ${formData.atividades}
+      Qual evento de e-sports mais marcou a pessoa e experiencia: ${formData.eventos}
+      Compras da FURIA: ${formData.atividades}
       
-      Faça um resumo breve sobre ele e me diga que tipo de ações ou campanhas podemos oferecer para esse fã.
+      Faça um resumo breve sobre ele, me diga qual desses três tipos de fã ele poderia ser considerado: 
+      1. Fã Lendário (Nível 1) = Acompanha praticamente todos os jogos e campeonatos, Compra produtos oficiais, participa de eventos e promoções.
+      2. Fã Fiel (Nível 2) = Segue o time nas redes sociais, mas nem sempre interage, ainda não foi em nenhum jogo presencial mas tem interesse. 
+      3. Fã Casual (Nível 3) = Conhece a FURIA, torce quando assiste, mas não acompanha sempre, Ainda não comprou produtos oficiais.
+
+       e me diga que tipo de ações ou campanhas podemos oferecer para esse fã.
       `;
 
       // Aqui você chama a IA
@@ -213,17 +220,29 @@ export function Quiz() {
                 required
               />
             </div>
-            <div className="mb-4 mt-4">
-              <label className="mt-5" htmlFor="endereco">
-                Suba seu documento de confirmação de identidade (CPF, RG,
-                CNH...)
+            <label htmlFor="endereco">
+              Você ja adquiriu algum produto da FURIA? Qual?
+            </label>
+            <input
+              type="text"
+              name="endereco"
+              value={formData.endereco}
+              onChange={handleChange}
+              className="border p-2  w-full mt-3 rounded"
+              required
+            />
+            <div className="mb-4 mt-5">
+              <label htmlFor="endereco">
+                Por favor, envie o link do seu perfil Faceit. Usaremos este link
+                apenas para validar que você joga CS:GO2
               </label>
-              <br />
               <input
-                type="file"
-                className="mt-5"
-                name="documento"
-                accept="image/*,.pdf"
+                type="text"
+                name="endereco"
+                value={formData.endereco}
+                onChange={handleChange}
+                className="border p-2 w-full mt-3 rounded"
+                required
               />
             </div>
           </div>

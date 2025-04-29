@@ -1,14 +1,19 @@
 import fastify, { FastifyInstance } from 'fastify'
 import { string, z } from 'zod'
+import fastifyJwt from '@fastify/jwt';
 
 let quizResults: Record<string, any>[] = [];
 
 export async function QuizRoutes(app: FastifyInstance) {
+    app.addHook('preHandler', async (request) => {
+        await request.jwtVerify()
+    })
 
     app.get('/quizResult', async (request) => {
 
         return { message: 'Resultados dos quizzes', data: quizResults };
     });
+
 
     app.post('/quiz', async (request) => {
 

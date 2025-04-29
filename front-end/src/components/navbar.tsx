@@ -9,22 +9,7 @@ import {
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Anton } from "next/font/google";
 
-const NAV_MENU = ["Jogadores", "Quiz", "Jogos"];
-
-// function NavItem({ children }: { children: React.ReactNode }) {
-//   return (
-//     <li>
-//       <Typography
-//         as="a"
-//         href="#"
-//         variant="paragraph"
-//         className="flex items-center gap-2 font-medium"
-//       >
-//         {children}
-//       </Typography>
-//     </li>
-//   );
-// }
+const NAV_MENU = ["Quiz", "Jogadores", "Jogos"];
 
 const NavItem = ({ children }) => {
   return (
