@@ -23,7 +23,7 @@ enum EventoPresencialStatus {
 model User {
   id        Int    @id @default(autoincrement())
   email     String @unique
-  name      String
+  nome      String
   senha     String
   documento String
 

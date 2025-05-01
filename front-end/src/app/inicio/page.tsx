@@ -1,16 +1,99 @@
 "use client";
 import React, { useState } from "react";
+import { FormEvent, MouseEvent } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import router from "next/router";
+import Cookie from "js-cookie";
 
 export default function inicio() {
   const [isLogin, setIsLogin] = useState(true);
 
-  const handleLoginClick = () => {
-    setIsLogin(true); // Ativa o formulário de login
+  // Ativa o form de login
+  const handleLoginClick = (event: MouseEvent<HTMLButtonElement>) => {
+    setIsLogin(true);
+    event.preventDefault();
   };
 
-  const handleRegisterClick = () => {
-    setIsLogin(false); // Ativa o formulário de cadastro
+  const handleRegisterClick = (event: MouseEvent<HTMLButtonElement>) => {
+    setIsLogin(false);
+    event.preventDefault();
   };
+
+  // envio de dados de cadastro para a api do back-end
+  async function handleCadastroClick(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const fileToUpload = formData.get("documento");
+    let documento = "";
+
+    if (fileToUpload) {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", fileToUpload); // Garante que o arquivo seja enviado corretamente
+
+      const uploadResponse = await api.post("/upload", uploadFormData); // Envia o arquivo para o backend
+
+      if (uploadResponse.data.fileUrl) {
+        documento = uploadResponse.data.fileUrl; // Usa a URL do arquivo retornada pelo backend
+      } else {
+        console.error("Erro ao fazer upload do documento.");
+      }
+    }
+    // Captura os outros dados do formulário
+    const token = Cookie.get("token");
+
+    await api.post(
+      "/cadastro",
+      {
+        documento,
+        nome: formData.get("nome"),
+        email: formData.get("email"),
+        senha: formData.get("senha"),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    // event.preventDefault();
+
+    // const form = event.currentTarget;
+    // const formData = new FormData(form);
+    // const fileToUpload = formData.get("documento");
+    // let documentoUrl = "";
+
+    // if (fileToUpload) {
+    //   const uploadFormData = new FormData();
+    //   uploadFormData.set("file", fileToUpload);
+
+    //   const uploadResponse = await api.post("/upload", uploadFormData);
+
+    //   documentoUrl = uploadResponse.data.fileURL;
+    // }
+
+    // console.log(documentoUrl);
+    // const token = Cookie.get("token");
+
+    // await api.post(
+    //   "/cadastro",
+    //   {
+    //     documentoUrl,
+    //     nome: formData.get("nome"),
+    //     email: formData.get("email"),
+    //     senha: formData.get("senha"),
+    //   },
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${token}`,
+    //     },
+    //   }
+    // );
+
+    router.push("/inicio");
+  }
 
   return (
     <div className=" min-h-screen absolute inset-0 bg-black opacity-500">
@@ -25,14 +108,10 @@ export default function inicio() {
           src="http://localhost:3000/image/video/cs2.mp4"
           type="video/mp4"
         />
-        Your browser does not support the video tag.
+        Seu navegador não suporta o video
       </video>
-
-      {/* Conteúdo - Formulário */}
-
       <div className="relative z-10 flex justify-center items-center min-h-screen">
         <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full">
-          {/* Botões de Alternância */}
           <div className="flex justify-around mb-4">
             <button
               onClick={handleLoginClick}
@@ -51,8 +130,6 @@ export default function inicio() {
               Cadastro
             </button>
           </div>
-
-          {/* Formulário de Login */}
           {isLogin ? (
             <>
               <h2 className="text-2xl text-center mb-4">Login</h2>
@@ -88,10 +165,9 @@ export default function inicio() {
               </form>
             </>
           ) : (
-            // Formulário de Cadastro
             <>
               <h2 className="text-2xl text-center mb-4">Cadastro</h2>
-              <form>
+              <form onSubmit={handleCadastroClick}>
                 <div className="mb-4">
                   <label htmlFor="name" className="block text-sm ">
                     Nome Completo
@@ -99,6 +175,7 @@ export default function inicio() {
                   <input
                     type="text"
                     id="name"
+                    name="nome"
                     className="w-full p-3 mt-1 border rounded-lg"
                     required
                   />
@@ -110,6 +187,7 @@ export default function inicio() {
                   <input
                     type="email"
                     id="email"
+                    name="email"
                     className="w-full p-3 mt-1 border rounded-lg"
                     required
                   />
@@ -121,6 +199,7 @@ export default function inicio() {
                   <input
                     type="password"
                     id="password"
+                    name="senha"
                     className="w-full p-3 mt-1 border rounded-lg"
                     required
                   />
@@ -132,6 +211,7 @@ export default function inicio() {
                   <input
                     type="password"
                     id="confirm-password"
+                    name="confirmar-senha"
                     className="w-full p-3 mt-1 border rounded-lg"
                     required
                   />

@@ -11,11 +11,17 @@ export async function authRoute(app: FastifyInstance) {
         const body = z.object({
             email: z.string().email(),
             senha: z.string().min(6),
-            nome: z.string().min(2),
-            documento: z.string().min(11),
+            nome: z.string(),
+            documento: z.string().url(),
         });
 
         const { email, senha, nome, documento } = body.parse(request.body);
+
+        if (documento && !documento.startsWith('http')) {
+            return reply.status(400).send({ error: 'Documento não é uma URL válida.' });
+        }
+
+        console.log(request.body)
 
         const usuarioExistente = await prisma.user.findUnique({
             where: { email },
