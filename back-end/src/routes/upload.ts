@@ -1,50 +1,52 @@
-import { FastifyInstance } from 'fastify'
+import fastify, { FastifyInstance } from 'fastify'
 import { randomUUID } from 'node:crypto'
 import { extname, resolve } from 'node:path'
 import { createWriteStream } from 'node:fs'
 import { pipeline } from 'node:stream'
 import { promisify } from 'node:util'
+import { Readable } from 'stream';
+import { MultipartFile } from '@fastify/multipart'
 
 const pump = promisify(pipeline)
 
 export async function uploadRoutes(app: FastifyInstance) {
-    app.post('/upload', async (request, reply) => {
-        const parts = request.files({
-            limits: {
-                fileSize: 5_242_880, // 5MB
-            },
-        })
 
-        const { value: upload } = await parts.next()
+    const scoped = app.register(async (scope) => {
+        scope.register(require('@fastify/multipart'));
 
-        if (!upload || !upload.file) {
-            return reply.status(400).send({ error: 'Arquivo não enviado.' })
-        }
+        scope.post('/upload', async (request, reply) => {
+            const parts = request.files({ limits: { fileSize: 5_242_880 } });
+            const { value: upload } = await parts.next();
+            console.log(upload);
 
-        const mimeTypeRegex = /^(image|video)\/[a-zA-Z]+/
-        const isValidFileFormat = mimeTypeRegex.test(upload.mimetype)
+            if (!upload || !upload.file) {
+                return reply.status(400).send({ error: 'Arquivo não enviado.' });
+            }
 
-        if (!isValidFileFormat) {
-            return reply.status(400).send({ error: 'Formato de arquivo inválido.' })
-        }
+            const mimeTypeRegex = /^application\/pdf$/;
+            const isValidFileFormat = mimeTypeRegex.test(upload.mimetype);
 
-        const fileId = randomUUID()
-        const extension = extname(upload.filename)
-        const fileName = fileId.concat(extension)
+            if (!isValidFileFormat) {
+                return reply.status(400).send({ error: 'Formato de arquivo inválido. Envie apenas PDF.' });
+            }
 
-        const filePath = resolve(__dirname, '../../uploads/', fileName)
-        const writeStream = createWriteStream(filePath)
+            const fileId = randomUUID();
+            const extension = extname(upload.filename);
+            const fileName = fileId.concat(extension);
 
-        await pump(upload.file, writeStream)
+            const filePath = resolve(__dirname, '../../uploads/', fileName);
+            const writeStream = createWriteStream(filePath);
 
-        const fullUrl = request.protocol.concat('://').concat(request.hostname)
-        const fileUrl = new URL(`/uploads/${fileName}`, fullUrl).toString()
+            await pump(upload.file, writeStream);
 
-        console.log(fileUrl)
+            const fullUrl = request.protocol.concat('://').concat(request.hostname);
+            const fileUrl = new URL(`/uploads/${fileName}`, fullUrl).toString();
 
-        return reply.send({ fileUrl })
+            console.log(fileUrl);
 
-    }
-    )
+            return reply.send({ fileUrl });
+        });
+
+    });
 }
 

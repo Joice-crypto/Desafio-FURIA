@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.1",
+    "@types/formidable": "^3.4.5",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/module-alias": "^2.0.4",
     "@types/multer": "^1.4.12",
@@ -33,6 +34,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "fastify": "^5.3.2",
+    "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",
     "prisma": "^6.7.0",
     "ts-node": "^10.9.2",

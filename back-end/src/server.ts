@@ -10,19 +10,20 @@ import { ChatBotRoutes } from './routes/chat';
 import { authRoute } from './routes/auth';
 import { QuizRoutes } from './routes/quiz';
 import { uploadRoutes } from './routes/upload';
+import { validarDocumentoRoute } from './routes/validarDocumento'
 
 
 dotenv.config();
 
 const fastify = Fastify({
-    logger: false
+    logger: true
 });
 
 fastify.register(cors, {
     origin: true,
 })
 
-fastify.register(fastifyMultipart)
+
 
 fastify.register(jwt, {
     secret: process.env.JWT_SECRET as string
@@ -37,6 +38,7 @@ fastify.register(authRoute)
 fastify.register(QuizRoutes)
 fastify.register(ChatBotRoutes)
 fastify.register(uploadRoutes)
+fastify.register(validarDocumentoRoute)
 
 
 fastify.listen({ port: 3333 }, (err, address) => {

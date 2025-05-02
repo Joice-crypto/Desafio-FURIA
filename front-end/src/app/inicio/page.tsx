@@ -5,95 +5,171 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import router from "next/router";
 import Cookie from "js-cookie";
+import { ValidacaoDocumento } from "../validarDoc";
+import { error } from "console";
 
 export default function inicio() {
   const [isLogin, setIsLogin] = useState(true);
+  const [validando, setValidando] = useState(false);
+  const [textoReconhecido, setTextoReconhecido] = useState("");
+  const [erro, setErro] = useState("");
+  const router = useRouter();
 
   // Ativa o form de login
   const handleLoginClick = (event: MouseEvent<HTMLButtonElement>) => {
     setIsLogin(true);
     event.preventDefault();
   };
-
+  //ativa o from de cadastro
   const handleRegisterClick = (event: MouseEvent<HTMLButtonElement>) => {
     setIsLogin(false);
     event.preventDefault();
   };
 
-  // envio de dados de cadastro para a api do back-end
+  // funcão que vai validar o documento
+  async function handleValidarDocumento(uploadFormData: FormData) {
+    setValidando(true);
+    setErro("");
+
+    try {
+      const fileToValidate = uploadFormData.get("file");
+      const nome = uploadFormData.get("nome");
+
+      // console.log(nome);
+      if (!(fileToValidate instanceof File)) {
+        throw new Error("Por favor, selecione um arquivo válido");
+      }
+
+      if (fileToValidate.size > 5 * 1024 * 1024) {
+        throw new Error("Arquivo muito grande (máximo 5MB)");
+      }
+
+      if (typeof nome !== "string") {
+        throw new Error("Nome inválido ou ausente.");
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileToValidate);
+      formData.append("nome", nome);
+
+      // formData.forEach((value, key) => {
+      //   console.log(`${key}:`, value);
+      // });
+
+      const { data } = await api.post("/validarDoc", formData);
+
+      // Processamento da resposta do Mistral
+      const respostaValidacao = data.choices?.[0]?.message?.content;
+      setTextoReconhecido(
+        respostaValidacao || "Não foi possível validar o documento"
+      );
+
+      return respostaValidacao;
+    } catch (err) {
+      console.error(err);
+      setErro("Erro ao validar documento");
+      throw err;
+    } finally {
+      setValidando(false);
+    }
+  }
+
   async function handleCadastroClick(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setErro("");
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const fileToUpload = formData.get("documento");
-    let documento = "";
+    try {
+      const formData = new FormData(event.currentTarget);
+      const fileToUpload = formData.get("documento");
 
-    if (fileToUpload) {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", fileToUpload); // Garante que o arquivo seja enviado corretamente
-
-      const uploadResponse = await api.post("/upload", uploadFormData); // Envia o arquivo para o backend
-
-      if (uploadResponse.data.fileUrl) {
-        documento = uploadResponse.data.fileUrl; // Usa a URL do arquivo retornada pelo backend
-      } else {
-        console.error("Erro ao fazer upload do documento.");
+      if (!(fileToUpload instanceof File)) {
+        throw new Error("Selecione um documento válido");
       }
-    }
-    // Captura os outros dados do formulário
-    const token = Cookie.get("token");
 
-    await api.post(
-      "/cadastro",
-      {
-        documento,
+      // 1. Validação do documento
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", fileToUpload);
+      uploadFormData.append("nome", formData.get("nome")?.toString() || "");
+
+      const resultadoValidacao = await handleValidarDocumento(uploadFormData);
+
+      let documento = "";
+      try {
+        const uploadResponse = await api.post("/upload", uploadFormData);
+
+        if (uploadResponse.data.fileUrl) {
+          documento = uploadResponse.data.fileUrl;
+        } else {
+          console.error("Erro ao fazer upload do documento.");
+        }
+      } catch (err) {
+        console.error("Erro ao fazer upload:", err);
+      }
+
+      // 2. Se a validação for bem-sucedida, prossegue com cadastro
+      const { data } = await api.post("/cadastro", {
         nome: formData.get("nome"),
         email: formData.get("email"),
         senha: formData.get("senha"),
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    // event.preventDefault();
+        documento: documento,
+      });
 
-    // const form = event.currentTarget;
-    // const formData = new FormData(form);
-    // const fileToUpload = formData.get("documento");
-    // let documentoUrl = "";
-
-    // if (fileToUpload) {
-    //   const uploadFormData = new FormData();
-    //   uploadFormData.set("file", fileToUpload);
-
-    //   const uploadResponse = await api.post("/upload", uploadFormData);
-
-    //   documentoUrl = uploadResponse.data.fileURL;
-    // }
-
-    // console.log(documentoUrl);
-    // const token = Cookie.get("token");
-
-    // await api.post(
-    //   "/cadastro",
-    //   {
-    //     documentoUrl,
-    //     nome: formData.get("nome"),
-    //     email: formData.get("email"),
-    //     senha: formData.get("senha"),
-    //   },
-    //   {
-    //     headers: {
-    //       Authorization: `Bearer ${token}`,
-    //     },
-    //   }
-    // );
-
-    router.push("/inicio");
+      router.push("/inicio");
+    } catch (err) {
+      console.error("Erro no cadastro:", err);
+      setErro("Erro ao realizar cadastro");
+    }
   }
+
+  // async function handleCadastroClick(event: FormEvent<HTMLFormElement>) {
+  //   event.preventDefault();
+
+  //   const form = event.currentTarget;
+  //   const formData = new FormData(form);
+  //   const fileToUpload = formData.get("documento");
+  //   let documento = "";
+
+  //   if (fileToUpload instanceof File) {
+  //     const uploadFormData = new FormData();
+  //     uploadFormData.append("file", fileToUpload);
+  //     uploadFormData.append(
+  //       "nomeUsuario",
+  //       formData.get("nome")?.toString() || ""
+  //     );
+
+  //     try {
+  //       const uploadResponse = await api.post("/upload", uploadFormData);
+
+  //       if (uploadResponse.data.fileUrl) {
+  //         documento = uploadResponse.data.fileUrl;
+  //         await handleValidarDocumento(uploadFormData);
+  //       } else {
+  //         console.error("Erro ao fazer upload do documento.");
+  //       }
+  //     } catch (err) {
+  //       console.error("Erro ao fazer upload:", err);
+  //     }
+  //   }
+
+  //   const token = Cookie.get("token");
+
+  //   await api.post(
+  //     "/cadastro",
+  //     {
+  //       documento,
+  //       nome: formData.get("nome"),
+  //       email: formData.get("email"),
+  //       senha: formData.get("senha"),
+  //     }
+  //     // {
+  //     //   headers: {
+  //     //     Authorization: `Bearer ${token}`,
+  //     //   },
+  //     // }
+  //   );
+
+  //   router.push("/inicio");
+  // }
 
   return (
     <div className=" min-h-screen absolute inset-0 bg-black opacity-500">
@@ -226,9 +302,22 @@ export default function inicio() {
                     type="file"
                     className="mt-5"
                     name="documento"
-                    accept="image/*,.pdf"
+                    accept=".pdf"
                   />
                 </div>
+                <ValidacaoDocumento
+                  status={
+                    validando
+                      ? "loading"
+                      : textoReconhecido
+                      ? "success"
+                      : erro
+                      ? "error"
+                      : "idle"
+                  }
+                  mensagem={textoReconhecido || erro}
+                />
+
                 <button
                   type="submit"
                   className="w-full bg-purple-800 text-white py-3 rounded-lg hover:bg-purple-500"
