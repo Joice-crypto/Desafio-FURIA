@@ -34,14 +34,18 @@ model Quiz {
   id                Int                    @id @default(autoincrement())
   userId            Int
   nome              String
+  cpf               String
   endereco          String
-  jogosAcompanhados String
+  jogosAcompanhados String[]
   eventoPresencial  EventoPresencialStatus
-  eventoMarcante    String
   experienciaEvento String
   produtoFuria      String?
   linkPerfilFaceit  String
-  relatorioIA       String
+  relatorioIA       String?
+  nicknameFaceit    String
+  countryFaceit     String
+  gamesFaceit       Json
+  eloFaceit         String
 
   user User @relation(fields: [userId], references: [id])
 

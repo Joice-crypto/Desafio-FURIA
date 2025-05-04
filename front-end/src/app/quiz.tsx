@@ -4,64 +4,82 @@ import { useState } from "react";
 import React from "react";
 import Image from "next/image";
 import { Button, Typography } from "@material-tailwind/react";
+import { api } from "@/lib/api";
+import RelatorioIA from "@/components/relatorio";
 
 export function Quiz() {
   const [formData, setFormData] = useState({
     nome: "",
-    endereco: "",
     cpf: "",
-    interesses: "",
-    atividades: "",
+    endereco: "",
+    jogos: [] as string[],
+    evento: "",
+    eventoDesc: "",
+    produtoFuria: "",
+    linkPerfilFaceit: "",
   });
 
   const [iaResponse, setIaResponse] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Função para atualizar os campos do formulário
   const handleChange = (e: { target: { name: any; value: any } }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Função para enviar os dados para a IA
-  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = e.target;
+
+    setFormData((prevData) => {
+      if (checked) {
+        return { ...prevData, jogos: [...prevData.jogos, value] };
+      } else {
+        return {
+          ...prevData,
+          jogos: prevData.jogos.filter((jogo) => jogo !== value),
+        };
+      }
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    const token = localStorage.getItem("token");
+
     try {
-      const prompt = `
-      Me ajude a entender este fã de eSports com base nas seguintes informações:
-      Nome: ${formData.nome}
-      Endereço: ${formData.endereco}
-      CPF: ${formData.cpf}
-      Jogos que acompanha: ${formData.jogos}
-      Se ja foi em um evento de e-sports presencial: ${formData.atividades}
-      Qual evento de e-sports mais marcou a pessoa e experiencia: ${formData.eventos}
-      Compras da FURIA: ${formData.atividades}
-      
-      Faça um resumo breve sobre ele, me diga qual desses três tipos de fã ele poderia ser considerado: 
-      1. Fã Lendário (Nível 1) = Acompanha praticamente todos os jogos e campeonatos, Compra produtos oficiais, participa de eventos e promoções.
-      2. Fã Fiel (Nível 2) = Segue o time nas redes sociais, mas nem sempre interage, ainda não foi em nenhum jogo presencial mas tem interesse. 
-      3. Fã Casual (Nível 3) = Conhece a FURIA, torce quando assiste, mas não acompanha sempre, Ainda não comprou produtos oficiais.
+      const { data } = await api.post(
+        "/quiz",
+        {
+          nome: formData.nome,
+          endereco: formData.endereco,
+          cpf: formData.cpf,
+          jogos: formData.jogos,
+          evento: formData.evento,
+          eventoDesc: formData.eventoDesc,
+          produtoFuria: formData.produtoFuria,
+          linkPerfilFaceit: formData.linkPerfilFaceit,
+          data: new Date().toISOString(),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-       e me diga que tipo de ações ou campanhas podemos oferecer para esse fã.
-      `;
-
-      // Aqui você chama a IA
-      const response = await fetch("/api/mistral", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+      const { data: iaData } = await api.get("/quizResult", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      const data = await response.json();
-      setIaResponse(data.resultado); // Ajuste o campo dependendo de como a IA retorna
+      setIaResponse(iaData.data);
+      console.log("Relatório gerado:", iaData.data);
     } catch (error) {
-      console.error("Erro ao enviar para IA:", error);
+      console.error("Erro ao enviar quiz:", error);
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <section
       id="Quiz"
@@ -89,7 +107,6 @@ export function Quiz() {
           <input
             type="text"
             name="nome"
-            value={formData.nome}
             onChange={handleChange}
             className="border p-2 rounded"
             required
@@ -98,16 +115,14 @@ export function Quiz() {
           <input
             type="text"
             name="endereco"
-            value={formData.endereco}
             onChange={handleChange}
             className="border p-2 rounded"
             required
           />
-          <label htmlFor="endereco">CPF</label>
+          <label htmlFor="cpf">CPF</label>
           <input
             type="text"
             name="cpf"
-            value={formData.cpf}
             onChange={handleChange}
             className="border p-2 rounded"
             required
@@ -120,8 +135,9 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  name="jogo"
+                  name="jogos"
                   value="Rocket League"
+                  onChange={handleCheckboxChange}
                   className="form-checkbox text-blue-500"
                 />
                 <span className="ml-2">Rocket League</span>
@@ -129,8 +145,9 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  name="jogo"
+                  name="jogos"
                   value="League of Legends"
+                  onChange={handleCheckboxChange}
                   className="form-checkbox text-blue-500"
                 />
                 <span className="ml-2">League of Legends</span>
@@ -138,8 +155,9 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  name="jogo"
+                  name="jogos"
                   value="CS:GO2"
+                  onChange={handleCheckboxChange}
                   className="form-checkbox text-blue-500"
                 />
                 <span className="ml-2">CS:GO2</span>
@@ -147,8 +165,9 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  name="jogo"
+                  name="jogos"
                   value="Valorant"
+                  onChange={handleCheckboxChange}
                   className="form-checkbox text-blue-500"
                 />
                 <span className="ml-2">Valorant</span>
@@ -156,8 +175,9 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  name="jogo"
+                  name="jogos"
                   value="Rainbow Six"
+                  onChange={handleCheckboxChange}
                   className="form-checkbox text-blue-500"
                 />
                 <span className="ml-2">Rainbow Six</span>
@@ -165,9 +185,10 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="checkbox"
-                  name="jogo"
+                  name="jogos"
                   value="Apex Legends"
                   className="form-checkbox text-blue-500"
+                  onChange={handleCheckboxChange}
                 />
                 <span className="ml-2">Apex Legends</span>
               </label>
@@ -182,8 +203,11 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  name="jogo"
-                  value="Sim"
+                  name="evento"
+                  value="sim"
+                  required
+                  onChange={handleChange}
+                  checked={formData.evento === "sim"}
                   className="form-radio text-blue-500"
                 />
                 <span className="ml-2">Sim</span>
@@ -191,8 +215,11 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  name="jogo"
+                  name="evento"
                   value="ainda nao"
+                  required
+                  onChange={handleChange}
+                  checked={formData.evento === "ainda nao"}
                   className="form-radio text-blue-500"
                 />
                 <span className="ml-2">Não, mas quero ir</span>
@@ -200,8 +227,11 @@ export function Quiz() {
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  name="jogo"
+                  name="evento"
                   value="nao"
+                  onChange={handleChange}
+                  checked={formData.evento === "nao"}
+                  required
                   className="form-radio text-blue-500"
                 />
                 <span className="ml-2">Não tenho interesse</span>
@@ -213,8 +243,7 @@ export function Quiz() {
                 Descreva sua experiência.
               </label>
               <textarea
-                name="endereco"
-                value={formData.endereco}
+                name="eventoDesc"
                 onChange={handleChange}
                 className="border p-2 mt-2 rounded w-full"
                 required
@@ -225,8 +254,7 @@ export function Quiz() {
             </label>
             <input
               type="text"
-              name="endereco"
-              value={formData.endereco}
+              name="produtoFuria"
               onChange={handleChange}
               className="border p-2  w-full mt-3 rounded"
               required
@@ -238,8 +266,7 @@ export function Quiz() {
               </label>
               <input
                 type="text"
-                name="endereco"
-                value={formData.endereco}
+                name="linkPerfilFaceit"
                 onChange={handleChange}
                 className="border p-2 w-full mt-3 rounded"
                 required
@@ -254,6 +281,7 @@ export function Quiz() {
             {loading ? "Enviando..." : "Enviar"}
           </button>
         </form>
+        <RelatorioIA texto={iaResponse} />
       </div>
     </section>
   );

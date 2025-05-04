@@ -3,10 +3,7 @@ import React, { useState } from "react";
 import { FormEvent, MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import router from "next/router";
-import Cookie from "js-cookie";
 import { ValidacaoDocumento } from "../validarDoc";
-import { error } from "console";
 
 export default function inicio() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,15 +13,37 @@ export default function inicio() {
   const router = useRouter();
 
   // Ativa o form de login
-  const handleLoginClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleLoginClick = () => {
     setIsLogin(true);
-    event.preventDefault();
   };
+
   //ativa o from de cadastro
   const handleRegisterClick = (event: MouseEvent<HTMLButtonElement>) => {
     setIsLogin(false);
     event.preventDefault();
   };
+
+  //  funcão que vai fazer o login do usuario
+  async function handleEntrarClick(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErro("");
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const { data } = await api.post("/login", {
+        email: formData.get("email"),
+        senha: formData.get("senha"),
+      });
+
+      localStorage.setItem("token", data.token);
+
+      router.push("/");
+    } catch (err: any) {
+      console.error(err);
+      setErro("E-mail ou senha inválidos");
+    }
+  }
 
   // funcão que vai validar o documento
   async function handleValidarDocumento(uploadFormData: FormData) {
@@ -35,7 +54,6 @@ export default function inicio() {
       const fileToValidate = uploadFormData.get("file");
       const nome = uploadFormData.get("nome");
 
-      // console.log(nome);
       if (!(fileToValidate instanceof File)) {
         throw new Error("Por favor, selecione um arquivo válido");
       }
@@ -52,14 +70,10 @@ export default function inicio() {
       formData.append("file", fileToValidate);
       formData.append("nome", nome);
 
-      // formData.forEach((value, key) => {
-      //   console.log(`${key}:`, value);
-      // });
-
       const { data } = await api.post("/validarDoc", formData);
 
       // Processamento da resposta do Mistral
-      const respostaValidacao = data.choices?.[0]?.message?.content;
+      const respostaValidacao = data.resposta;
       setTextoReconhecido(
         respostaValidacao || "Não foi possível validar o documento"
       );
@@ -86,94 +100,30 @@ export default function inicio() {
         throw new Error("Selecione um documento válido");
       }
 
-      // 1. Validação do documento
       const uploadFormData = new FormData();
       uploadFormData.append("file", fileToUpload);
       uploadFormData.append("nome", formData.get("nome")?.toString() || "");
 
       const resultadoValidacao = await handleValidarDocumento(uploadFormData);
 
-      let documento = "";
-      try {
-        const uploadResponse = await api.post("/upload", uploadFormData);
-
-        if (uploadResponse.data.fileUrl) {
-          documento = uploadResponse.data.fileUrl;
-        } else {
-          console.error("Erro ao fazer upload do documento.");
-        }
-      } catch (err) {
-        console.error("Erro ao fazer upload:", err);
-      }
-
-      // 2. Se a validação for bem-sucedida, prossegue com cadastro
       const { data } = await api.post("/cadastro", {
         nome: formData.get("nome"),
         email: formData.get("email"),
         senha: formData.get("senha"),
-        documento: documento,
+        documento: resultadoValidacao,
       });
 
-      router.push("/inicio");
+      setTimeout(() => {
+        handleLoginClick();
+      }, 2000);
     } catch (err) {
       console.error("Erro no cadastro:", err);
       setErro("Erro ao realizar cadastro");
     }
   }
 
-  // async function handleCadastroClick(event: FormEvent<HTMLFormElement>) {
-  //   event.preventDefault();
-
-  //   const form = event.currentTarget;
-  //   const formData = new FormData(form);
-  //   const fileToUpload = formData.get("documento");
-  //   let documento = "";
-
-  //   if (fileToUpload instanceof File) {
-  //     const uploadFormData = new FormData();
-  //     uploadFormData.append("file", fileToUpload);
-  //     uploadFormData.append(
-  //       "nomeUsuario",
-  //       formData.get("nome")?.toString() || ""
-  //     );
-
-  //     try {
-  //       const uploadResponse = await api.post("/upload", uploadFormData);
-
-  //       if (uploadResponse.data.fileUrl) {
-  //         documento = uploadResponse.data.fileUrl;
-  //         await handleValidarDocumento(uploadFormData);
-  //       } else {
-  //         console.error("Erro ao fazer upload do documento.");
-  //       }
-  //     } catch (err) {
-  //       console.error("Erro ao fazer upload:", err);
-  //     }
-  //   }
-
-  //   const token = Cookie.get("token");
-
-  //   await api.post(
-  //     "/cadastro",
-  //     {
-  //       documento,
-  //       nome: formData.get("nome"),
-  //       email: formData.get("email"),
-  //       senha: formData.get("senha"),
-  //     }
-  //     // {
-  //     //   headers: {
-  //     //     Authorization: `Bearer ${token}`,
-  //     //   },
-  //     // }
-  //   );
-
-  //   router.push("/inicio");
-  // }
-
   return (
     <div className=" min-h-screen absolute inset-0 bg-black opacity-500">
-      {/* Background - Vídeo */}
       <video
         autoPlay
         loop
@@ -209,7 +159,7 @@ export default function inicio() {
           {isLogin ? (
             <>
               <h2 className="text-2xl text-center mb-4">Login</h2>
-              <form>
+              <form onSubmit={handleEntrarClick}>
                 <div className="mb-4">
                   <label htmlFor="email" className="block text-sm ">
                     E-mail
@@ -217,6 +167,7 @@ export default function inicio() {
                   <input
                     type="email"
                     id="email"
+                    name="email"
                     className="w-full p-3 mt-1 border rounded-lg"
                     required
                   />
@@ -228,6 +179,7 @@ export default function inicio() {
                   <input
                     type="password"
                     id="password"
+                    name="senha"
                     className="w-full p-3 mt-1 border rounded-lg"
                     required
                   />
