@@ -4,6 +4,8 @@ Este projeto tem como objetivo criar uma plataforma interativa voltada para fãs
 
 A plataforma é pensada para engajar fãs, coletar dados relevantes de forma estruturada e apresentar insights baseados nas respostas, de forma clara e objetiva.
 
+
+[![](https://markdown-videos-api.jorgenkh.no/youtube/tAmtA9hmvog )](https://youtu.be/tAmtA9hmvog)
 ---
 
 ## Funcionalidades
